@@ -33,10 +33,19 @@ object Personae {
   *
   * Use the function isDramatisStart to determine whether the next lines will be part of the dramatis personae.
   * Use the function isDramatisEnd to determine whether the following lines are not part of the dramatis personae.
-
   */
-  def parsePersonae(acc: Accumulator, line: String): Accumulator = ???
+  def parsePersonae(acc: Accumulator, line: String): Accumulator = {
+    acc match {
+      case (characters,Other) => if (isDramatisStart(line)) (characters, Dramatis)  else acc
+      case (characters,Dramatis) => if (isDramatisEnd(line)) {
+        (characters, Other)
+      } else {
+        val accumulatorOpt = parsePersona(line).map(p => (characters + p, Dramatis))
 
+        accumulatorOpt.getOrElse(acc)
+      }
+    }
+  }
 
   /** takes a Dramatis Personae line string without outer whitespace and returns the person if any */
   def parsePersona(line: String): Option[String] = {
