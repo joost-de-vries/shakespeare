@@ -13,12 +13,14 @@ class ParsingSpec extends FlatSpec with Matchers {
     Personae.parsePersona("MACBETH, Thane of Glamis and Cawdor, a general in the King's army") should be(Some("MACBETH"))
   }
 
+  it should "find existing persona" in {
+    Personae.scan(Shakespeare.source).size should be(681)
+  }
+
   "Processing" should "strip the initial and final license" in {
     import Processing._
     for (line <- Shakespeare.source.getLines().stripLicenses()) {
-      val ebook = line.toLowerCase.contains(" ebook")
-      if (ebook) println(line)
-      ebook should be(false)
+      line.toLowerCase.contains(" ebook") should be(false)
     }
   }
 
