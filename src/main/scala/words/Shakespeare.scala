@@ -37,11 +37,9 @@ object Shakespeare {
 
   def readFile()(implicit executionContext: ExecutionContext): IndexedSeq[Future[String]] = {
     import scala.collection.JavaConversions._
-    val path = Paths.get(
-      url.toURI)
+    val path = Paths.get(url.toURI)
 
     val size = Files.size(path).toInt
-    println(size)
     val attributes = Array[FileAttribute[_]]()
 
     val channel = AsynchronousFileChannel.open(path, Set(StandardOpenOption.READ),
@@ -49,16 +47,16 @@ object Shakespeare {
 
 
     val blockSize = size / 100000
-    val nrOfBlocks = (size / blockSize).toInt
+    val nrOfBlocks = size / blockSize
     val blocks = 0 until nrOfBlocks
-    val remainder = (size % blockSize).toInt
+    val remainder = size % blockSize
     val futures = blocks.map(i => readBuffer(channel,
       from = i * blockSize, bytes = blockSize))
     futures :+ readBuffer(channel, from = (nrOfBlocks - 1) * blockSize, remainder)
   }
 
   def readStream()(implicit executionContext: ExecutionContext): Source[String, Unit] = {
-    val x = readFile().map(f => Source(f)) //.foldLeft(Source.empty[String])((accSource: Source[String, Unit], s) => accSource.concatMat(s)((_, _) => ()))
+    val x = readFile().map(f => Source(f))
     Source(() => x.iterator).flatten[String](FlattenStrategy.concat)
   }
 
@@ -67,6 +65,7 @@ object Shakespeare {
     readFile().map(f => Source(f)).foldLeft(Source.empty[String])((accSource: Source[String, Unit], s) => accSource.concatMat(s)((_, _) => ()))
   }
 
+  //???
   def readBuffer(channel: AsynchronousFileChannel, from: Int, bytes: Int): Future[String] = {
     def toUtf8(buffer: ByteBuffer): String = new String(buffer.array(), StandardCharsets.UTF_8)
 

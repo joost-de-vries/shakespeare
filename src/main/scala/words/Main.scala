@@ -42,9 +42,9 @@ object Main extends App {
   implicit val materializer = ActorMaterializer()
 
   //  val stream = readStream()
-  //
   //  val sink = Sink.foreach(print)
   //  stream.runWith(sink)
+
   val x = Await.result(DbPedia.findCharacterAbstracts(), 1000.millis)
 
   println(x)
