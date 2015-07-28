@@ -8,6 +8,8 @@ import java.nio.file.attribute.FileAttribute
 import java.nio.file.{Files, StandardOpenOption, Paths, Path}
 import java.util.Collections
 import java.util.concurrent.{Future => JavaFuture, TimeUnit, AbstractExecutorService}
+import akka.stream.scaladsl.FlattenStrategy
+import akka.stream.scaladsl.Source
 
 import scala.concurrent.{Future, Promise, ExecutionContextExecutorService, ExecutionContext}
 import scala.io.Source._
@@ -43,16 +45,26 @@ object Shakespeare {
     val attributes = Array[FileAttribute[_]]()
 
     val channel = AsynchronousFileChannel.open(path, Set(StandardOpenOption.READ),
-        ExecutionContextExecutorServiceBridge(executionContext), attributes: _*)
+      ExecutionContextExecutorServiceBridge(executionContext), attributes: _*)
 
 
-      val blockSize = size / 100
-      val nrOfBlocks = (size / blockSize).toInt
-      val blocks = 0 until nrOfBlocks
-      val remainder = (size % blockSize).toInt
-      val futures = blocks.map(i => readBuffer(channel,
-        from = i * blockSize, bytes = blockSize))
-      futures :+ readBuffer(channel, from = (nrOfBlocks - 1) * blockSize, remainder)
+    val blockSize = size / 100000
+    val nrOfBlocks = (size / blockSize).toInt
+    val blocks = 0 until nrOfBlocks
+    val remainder = (size % blockSize).toInt
+    val futures = blocks.map(i => readBuffer(channel,
+      from = i * blockSize, bytes = blockSize))
+    futures :+ readBuffer(channel, from = (nrOfBlocks - 1) * blockSize, remainder)
+  }
+
+  def readStream()(implicit executionContext: ExecutionContext): Source[String, Unit] = {
+    val x = readFile().map(f => Source(f)) //.foldLeft(Source.empty[String])((accSource: Source[String, Unit], s) => accSource.concatMat(s)((_, _) => ()))
+    Source(() => x.iterator).flatten[String](FlattenStrategy.concat)
+  }
+
+  private def readStreamx()(implicit executionContext: ExecutionContext): Source[String, Unit] = {
+    //leads to a stack overflow error at 1000 elements because of non tailrecursive function in Akka
+    readFile().map(f => Source(f)).foldLeft(Source.empty[String])((accSource: Source[String, Unit], s) => accSource.concatMat(s)((_, _) => ()))
   }
 
   def readBuffer(channel: AsynchronousFileChannel, from: Int, bytes: Int): Future[String] = {

@@ -2,6 +2,10 @@ package words
 
 import java.nio.charset.StandardCharsets
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.Sink
+
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -16,11 +20,22 @@ object Main extends App {
   val start = System.nanoTime()
 
       //Personae.scan(Shakespeare.source).foreach(println)
+
   import Shakespeare._
-  val futures=readFile()
-//val x = futures.map(_.map(print))
-  val f=Future.sequence(futures)
-  Await.result(f,5000.milliseconds)
-  val end = System.nanoTime()
-  println((end-start)/1000000)
+//  val futures=readFile()
+////val x = futures.map(_.map(print))
+//  val f=Future.sequence(futures)
+//  Await.result(f,5000.milliseconds)
+//  val end = System.nanoTime()
+//  println((end-start)/1000000)
+
+  val stream = readStream()
+
+  implicit val system = ActorSystem("wordsSystem")
+  implicit val materializer = ActorMaterializer()
+
+
+  val sink = Sink.foreach(print)
+  stream.runWith(sink)
+
 }
