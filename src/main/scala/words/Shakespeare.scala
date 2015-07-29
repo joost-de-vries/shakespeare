@@ -58,36 +58,27 @@ object Shakespeare {
     futures ++ List(readBuffer(channel, from = (nrOfBlocks - 1) * blockSize, remainder))
   }
 
-  def readStream(blockSize: Int)(implicit executionContext: ExecutionContext): Source[String, Unit] = {
-    val x = () => readFile(blockSize).map(f => Source(f))
-    Source(x).flatten[String](FlattenStrategy.concat)
-  }
+  /** 4) read the file as a akka stream. Use
+    * readFile,
+    * Source(f:Future),
+    * Source(it:Unit=> Iterator) and
+    * flatten(FlattenStrategy.concat)
+    * */
+  def readStream(blockSize: Int)(implicit executionContext: ExecutionContext): Source[String, Unit] = ???
+
 
   private def readStreamx()(implicit executionContext: ExecutionContext): Source[String, Unit] = {
     //leads to a stack overflow error at 1000 elements because of non tailrecursive function in Akka
     readFile(1024).map(f => Source(f)).foldLeft(Source.empty[String])((accSource: Source[String, Unit], s) => accSource.concatMat(s)((_, _) => ()))
   }
 
-  /** Use the function read and a Promise to transform the channel into a Future[String] */
-  //???
+  /** 3) Use the function read and a Promise to transform the channel into a Future[String] */
   def readBuffer(channel: AsynchronousFileChannel, from: Int, bytes: Int): Future[String] = {
     def toUtf8(buffer: ByteBuffer): String = new Predef.String(buffer.array(), StandardCharsets.UTF_8)
 
     val buffer = ByteBuffer.allocate(bytes);
 
-    val p = Promise[String]()
-
-    val handler = new CompletionHandler[Integer, String]() {
-      override def completed(bytesRead: Integer, attachment: String): Unit = {
-        p.success(toUtf8(buffer))
-      }
-
-      override def failed(exc: Throwable, attachment: String): Unit = {
-        p.failure(exc)
-      }
-    }
-    read(channel, from, buffer, handler)
-    p.future
+    ???
   }
 
   private def read(channel: AsynchronousFileChannel, from: Int, buffer: ByteBuffer, handler: CompletionHandler[Integer, String]): Unit = {

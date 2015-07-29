@@ -40,29 +40,19 @@ object DbPedia {
     toCharacters(respFut)
   }
 
-  //???
-    /** Invokes DbPedia given the FormData and returns the resulting http entity as a json value.
+    /** 1) Invokes DbPedia given the FormData and returns the resulting http entity as a json value.
       * Use the functions from DbPedioInvoker to implement this function.*/
   import DbPediaInvoker._
   private def toResponse(form: FormData)(implicit system: ActorSystem, materializer: Materializer): Future[JsValue] = {
     import system.dispatcher
-    for {entity <- createEntity(form)
-         response <- invoke(entity)
-         jsResult <- parseJsResult(response)
-    } yield jsResult
+    ???
   }
 
-  //???
-  /** parses a Seq of Characters out of the json http entity.
+  /** 2) parses a Seq of Characters out of the json http entity.
     * Use the function toJsCharacters to get the JsArray of data per character from the entity.
     * Use the function toCharacter to transform a single entry out of that array into a Character object.
     */
-  private def toCharacters(respFut: Future[JsValue])(implicit executionContext: ExecutionContext): Future[Vector[Character]] = {
-    respFut.map(toJsCharacters).flatMap {
-      case array: JsArray => Future.successful(array.elements.map(toCharacter))
-      case _ => Future.failed(new scala.RuntimeException("parse failure"))
-    }
-  }
+  private def toCharacters(respFut: Future[JsValue])(implicit executionContext: ExecutionContext): Future[Vector[Character]] = ???
 
   private def toJsCharacters(jsResponse: JsValue): JsValue = jsResponse.asJsObject.fields("results").asJsObject.fields("bindings")
 
