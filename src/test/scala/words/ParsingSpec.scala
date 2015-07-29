@@ -1,6 +1,7 @@
 package words
 
 import org.scalatest._
+import Main.out
 
 class ParsingSpec extends FlatSpec with Matchers {
   "Persona parser" should "ignore indefinite article" in {
@@ -44,6 +45,6 @@ class ParsingSpec extends FlatSpec with Matchers {
     val endTime = System.nanoTime()
     val deltaMem = (startMem - endMem) / 1024 / 1024
     val deltaTime = (endTime-startTime)/1000/1000/1000
-    println(s"processed in $deltaTime s using $deltaMem MB") //scalastyle:ignore regex
+    out(s"processed in $deltaTime s using $deltaMem MB")
   }
 }
