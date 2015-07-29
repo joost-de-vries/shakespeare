@@ -10,8 +10,11 @@ import java.util.Collections
 import java.util.concurrent.{AbstractExecutorService, Future => JavaFuture, TimeUnit}
 
 import akka.stream.scaladsl.{FlattenStrategy, Source}
+import words.util.ExecutionContextExecutorServiceBridge
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future, Promise}
+import scala.Predef
+import scala.annotation.tailrec
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source._
 import scala.io.{Source => ScalaSource}
 
@@ -21,9 +24,9 @@ import scala.io.{Source => ScalaSource}
 object Shakespeare {
   val filePath = "/shakespeare - works.txt"
 
-  def source:ScalaSource = fromInputStream(getClass.getResourceAsStream(filePath))
+  def source: ScalaSource = fromInputStream(getClass.getResourceAsStream(filePath))
 
-  def url:URL = getClass.getResource(filePath)
+  def url: URL = getClass.getResource(filePath)
 
   val endOfInitialLicense = 170
 
@@ -36,7 +39,8 @@ object Shakespeare {
   def isDramatisEnd(line: String): Boolean =
     line.startsWith("<<THIS ELECTRONIC VERSION")
 
-  def readFile()(implicit executionContext: ExecutionContext): IndexedSeq[Future[String]] = {
+  /** Read the shakespeare file asynchronously as utf8 strings of blockSize bytes. */
+  def readFile(blockSize: Int)(implicit executionContext: ExecutionContext): Iterator[Future[String]] = {
     import scala.collection.JavaConversions._
     val path = Paths.get(url.toURI)
 
@@ -46,29 +50,28 @@ object Shakespeare {
     val channel = AsynchronousFileChannel.open(path, Set(StandardOpenOption.READ),
       ExecutionContextExecutorServiceBridge(executionContext), attributes: _*)
 
-
-    val blockSize = size / 100000
     val nrOfBlocks = size / blockSize
-    val blocks = 0 until nrOfBlocks
     val remainder = size % blockSize
+    val blocks = (0 until nrOfBlocks).iterator
     val futures = blocks.map(i => readBuffer(channel,
       from = i * blockSize, bytes = blockSize))
-    futures :+ readBuffer(channel, from = (nrOfBlocks - 1) * blockSize, remainder)
+    futures ++ List(readBuffer(channel, from = (nrOfBlocks - 1) * blockSize, remainder))
   }
 
-  def readStream()(implicit executionContext: ExecutionContext): Source[String, Unit] = {
-    val x = readFile().map(f => Source(f))
-    Source(() => x.iterator).flatten[String](FlattenStrategy.concat)
+  def readStream(blockSize: Int)(implicit executionContext: ExecutionContext): Source[String, Unit] = {
+    val x = () => readFile(blockSize).map(f => Source(f))
+    Source(x).flatten[String](FlattenStrategy.concat)
   }
 
   private def readStreamx()(implicit executionContext: ExecutionContext): Source[String, Unit] = {
     //leads to a stack overflow error at 1000 elements because of non tailrecursive function in Akka
-    readFile().map(f => Source(f)).foldLeft(Source.empty[String])((accSource: Source[String, Unit], s) => accSource.concatMat(s)((_, _) => ()))
+    readFile(1024).map(f => Source(f)).foldLeft(Source.empty[String])((accSource: Source[String, Unit], s) => accSource.concatMat(s)((_, _) => ()))
   }
 
+  /** Use the function read and a Promise to transform the channel into a Future[String] */
   //???
   def readBuffer(channel: AsynchronousFileChannel, from: Int, bytes: Int): Future[String] = {
-    def toUtf8(buffer: ByteBuffer): String = new String(buffer.array(), StandardCharsets.UTF_8)
+    def toUtf8(buffer: ByteBuffer): String = new Predef.String(buffer.array(), StandardCharsets.UTF_8)
 
     val buffer = ByteBuffer.allocate(bytes);
 
@@ -83,31 +86,13 @@ object Shakespeare {
         p.failure(exc)
       }
     }
-    channel.read(buffer, from, "", handler)
+    read(channel, from, buffer, handler)
     p.future
   }
-}
 
-object ExecutionContextExecutorServiceBridge {
-  def apply(ec: ExecutionContext): ExecutionContextExecutorService = ec match {
-    case null => throw null  //scalastyle:ignore null
-    case eces: ExecutionContextExecutorService => eces
-    case other => new AbstractExecutorService with ExecutionContextExecutorService {
-      override def prepare(): ExecutionContext = other
-
-      override def isShutdown = false
-
-      override def isTerminated = false
-
-      override def shutdown() = ()
-
-      override def shutdownNow() = Collections.emptyList[Runnable]
-
-      override def execute(runnable: Runnable): Unit = other execute runnable
-
-      override def reportFailure(t: Throwable): Unit = other reportFailure t
-
-      override def awaitTermination(length: Long, unit: TimeUnit): Boolean = false
-    }
+  private def read(channel: AsynchronousFileChannel, from: Int, buffer: ByteBuffer, handler: CompletionHandler[Integer, String]): Unit = {
+    channel.read(buffer, from, "", handler)
   }
 }
+
+

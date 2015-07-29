@@ -25,6 +25,8 @@ scalastyleConfig := baseDirectory.value / "src/test/resources/scalastyle-config.
 // Create a default Scala style task to run with tests
 lazy val testScalastyle = taskKey[Unit]("testScalastyle")
 
+scalastyleFailOnError := true
+
 testScalastyle := org.scalastyle.sbt.ScalastylePlugin.scalastyle.in(Test).toTask("").value
 
 (test in Test) <<= (test in Test) dependsOn testScalastyle

@@ -41,16 +41,22 @@ object DbPedia {
   }
 
   //???
+    /** Invokes DbPedia given the FormData and returns the resulting http entity as a json value.
+      * Use the functions from DbPedioInvoker to implement this function.*/
   import DbPediaInvoker._
   private def toResponse(form: FormData)(implicit system: ActorSystem, materializer: Materializer): Future[JsValue] = {
     import system.dispatcher
     for {entity <- createEntity(form)
-                       response <- invoke(entity)
-                       jsResult <- parseJsResult(response)
+         response <- invoke(entity)
+         jsResult <- parseJsResult(response)
     } yield jsResult
   }
 
   //???
+  /** parses a Seq of Characters out of the json http entity.
+    * Use the function toJsCharacters to get the JsArray of data per character from the entity.
+    * Use the function toCharacter to transform a single entry out of that array into a Character object.
+    */
   private def toCharacters(respFut: Future[JsValue])(implicit executionContext: ExecutionContext): Future[Vector[Character]] = {
     respFut.map(toJsCharacters).flatMap {
       case array: JsArray => Future.successful(array.elements.map(toCharacter))
@@ -68,7 +74,7 @@ object DbPedia {
   }
 }
 
-object DbPediaInvoker extends SprayJsonSupport{
+object DbPediaInvoker extends SprayJsonSupport {
   def createEntity(form: FormData)(implicit executionContext: ExecutionContext): Future[RequestEntity] = Marshal(form).to[RequestEntity]
 
   def invoke(entity: RequestEntity)(implicit system: ActorSystem, materializer: Materializer): Future[HttpResponse] = {
@@ -76,7 +82,7 @@ object DbPediaInvoker extends SprayJsonSupport{
   }
 
   def parseJsResult(response: HttpResponse)
-                   (implicit executionContext: ExecutionContext,um:Unmarshaller[ResponseEntity,JsValue]): Future[JsValue] = {
+                   (implicit executionContext: ExecutionContext, um: Unmarshaller[ResponseEntity, JsValue]): Future[JsValue] = {
     Unmarshal(response.entity).to[JsValue]
   }
 }

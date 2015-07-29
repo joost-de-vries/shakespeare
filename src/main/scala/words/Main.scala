@@ -14,7 +14,7 @@ object Main extends App {
   //    }
 
   //InMemory.wordCount(Shakespeare.source.getLines()).foreach(wc => out(wc))
-  val start = System.nanoTime()
+  //val start = System.nanoTime()
 
   //Personae.scan(Shakespeare.source).foreach(out)
 
@@ -27,19 +27,22 @@ object Main extends App {
 
   implicit val system = ActorSystem("wordsSystem")
   implicit val materializer = ActorMaterializer()
+  import system.dispatcher
 
   //  val stream = readStream()
   //  val sink = Sink.foreach(print)
   //  stream.runWith(sink)
 
-  val x = Await.result(DbPedia.findCharacterAbstracts(), 1000.millis)
+//  val x = Await.result(DbPedia.findCharacterAbstracts(), 1000.millis)
+//
+//  out(x)
 
-  out(x)
-
+  val p =Shakespeare.readLines.map(_.map(out))
+  Await.result(p,1000.millis)
+  out("type ENTER to exit.")
   readLine
   system.shutdown()
-  system.awaitTermination(5000.millis)
 
-  def out(s : => Any) : Unit = println(s) //scalastyle:ignore regex
+  def out(s : Any) : Unit = println(s) //scalastyle:ignore regex
 
 }
