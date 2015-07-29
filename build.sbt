@@ -4,6 +4,11 @@ version := "1.0"
 
 scalaVersion := "2.11.7"
 
+scalacOptions ++= Seq("-unchecked", "-feature", "-deprecation",
+  "-Xlint", "-Ybackend:GenBCode", "-encoding", "UTF8",
+  "-Ywarn-unused-import","-Xfatal-warnings")
+
+
 // Change this to another test framework if you prefer
 libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % "2.2.4" % "test",
   "com.typesafe.akka" % "akka-stream-experimental_2.11" % "1.0",

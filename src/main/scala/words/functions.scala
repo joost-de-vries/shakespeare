@@ -1,8 +1,7 @@
 package words
 
 
-import scala.io.Source
-import Shakespeare._
+import words.Shakespeare._
 
 object Processing {
 

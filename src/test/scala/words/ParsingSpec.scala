@@ -2,8 +2,6 @@ package words
 
 import org.scalatest._
 
-import scala.io.Source
-
 class ParsingSpec extends FlatSpec with Matchers {
   "Persona parser" should "ignore indefinite article" in {
     Personae.parsePersona("A Hero") should be(None)
@@ -14,7 +12,8 @@ class ParsingSpec extends FlatSpec with Matchers {
   }
 
   it should "find existing persona" in {
-    Personae.scan(Shakespeare.source).size should be(681)
+    val lines=681
+    Personae.scan(Shakespeare.source).size should be(lines)
   }
 
   "Processing" should "strip the initial and final license" in {
@@ -25,7 +24,8 @@ class ParsingSpec extends FlatSpec with Matchers {
   }
 
   "in memory processing" should "determine correct count for 'bequeath'" in {
-    InMemory.wordCount(Shakespeare.source.getLines())("bequeath") should be(9)
+    val occurrences=9
+    InMemory.wordCount(Shakespeare.source.getLines())("bequeath") should be(occurrences)
   }
 
   "lazy processing" should "handle large amount of data in availabble memory" in {
@@ -33,10 +33,10 @@ class ParsingSpec extends FlatSpec with Matchers {
     val it: Iterator[String] = new Iterator[String] {
       override def next(): String = bigString
 
-      override def hasNext(): Boolean = true
+      override def hasNext: Boolean = true
     }
     Runtime.getRuntime.gc()
-    def free = Runtime.getRuntime.freeMemory()
+    def free:Long = Runtime.getRuntime.freeMemory()
     val startMem = free
     val startTime= System.nanoTime()
     Lazy.wordCount(it.take(Int.MaxValue / 16))
@@ -44,6 +44,6 @@ class ParsingSpec extends FlatSpec with Matchers {
     val endTime = System.nanoTime()
     val deltaMem = (startMem - endMem) / 1024 / 1024
     val deltaTime = (endTime-startTime)/1000/1000/1000
-    println(s"processed in $deltaTime s using $deltaMem MB")
+    println(s"processed in $deltaTime s using $deltaMem MB") //scalastyle:ignore regex
   }
 }

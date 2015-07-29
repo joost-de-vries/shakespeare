@@ -1,18 +1,19 @@
 package words
 
-import java.io.File
+import java.net.URL
 import java.nio.ByteBuffer
-import java.nio.channels.{CompletionHandler, AsynchronousFileChannel}
+import java.nio.channels.{AsynchronousFileChannel, CompletionHandler}
 import java.nio.charset.StandardCharsets
 import java.nio.file.attribute.FileAttribute
-import java.nio.file.{Files, StandardOpenOption, Paths, Path}
+import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.Collections
-import java.util.concurrent.{Future => JavaFuture, TimeUnit, AbstractExecutorService}
-import akka.stream.scaladsl.FlattenStrategy
-import akka.stream.scaladsl.Source
+import java.util.concurrent.{AbstractExecutorService, Future => JavaFuture, TimeUnit}
 
-import scala.concurrent.{Future, Promise, ExecutionContextExecutorService, ExecutionContext}
+import akka.stream.scaladsl.{FlattenStrategy, Source}
+
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future, Promise}
 import scala.io.Source._
+import scala.io.{Source => ScalaSource}
 
 /**
  * Created by joost1 on 22/07/15.
@@ -20,9 +21,9 @@ import scala.io.Source._
 object Shakespeare {
   val filePath = "/shakespeare - works.txt"
 
-  def source = fromInputStream(getClass.getResourceAsStream(filePath))
+  def source:ScalaSource = fromInputStream(getClass.getResourceAsStream(filePath))
 
-  def url = getClass.getResource(filePath)
+  def url:URL = getClass.getResource(filePath)
 
   val endOfInitialLicense = 170
 
@@ -82,14 +83,14 @@ object Shakespeare {
         p.failure(exc)
       }
     }
-    channel.read(buffer, from, null, handler)
+    channel.read(buffer, from, "", handler)
     p.future
   }
 }
 
 object ExecutionContextExecutorServiceBridge {
   def apply(ec: ExecutionContext): ExecutionContextExecutorService = ec match {
-    case null => throw null
+    case null => throw null  //scalastyle:ignore null
     case eces: ExecutionContextExecutorService => eces
     case other => new AbstractExecutorService with ExecutionContextExecutorService {
       override def prepare(): ExecutionContext = other

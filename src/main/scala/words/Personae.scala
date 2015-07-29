@@ -1,7 +1,8 @@
 package words
 
+import words.Shakespeare._
+
 import scala.io.Source
-import Shakespeare._
 
 
 /**

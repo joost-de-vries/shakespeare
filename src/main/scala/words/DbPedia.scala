@@ -5,17 +5,17 @@ import akka.http.javadsl.model.RequestEntity
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.marshalling.PredefinedToEntityMarshallers.FormDataMarshaller
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.{Unmarshaller, Unmarshal}
+import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.stream.Materializer
 import spray.json.{JsArray, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
-import akka.http.scaladsl.marshalling.PredefinedToEntityMarshallers.FormDataMarshaller
 
 
 /**
- * Created by joost1 on 28/07/15.
+ * Query dbpedia. Dbpedia is a semantic database with wikipedia content.
  */
 object DbPedia {
 
@@ -75,5 +75,8 @@ object DbPediaInvoker extends SprayJsonSupport{
     Http().singleRequest(HttpRequest(uri = "http://dbpedia.org/sparql", method = HttpMethods.POST).withEntity(entity))
   }
 
-  def parseJsResult(response: HttpResponse)(implicit executionContext: ExecutionContext,um:Unmarshaller[ResponseEntity,JsValue]): Future[JsValue] = Unmarshal(response.entity).to[JsValue]
+  def parseJsResult(response: HttpResponse)
+                   (implicit executionContext: ExecutionContext,um:Unmarshaller[ResponseEntity,JsValue]): Future[JsValue] = {
+    Unmarshal(response.entity).to[JsValue]
+  }
 }
