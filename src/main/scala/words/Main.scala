@@ -40,6 +40,6 @@ object Main extends App {
   system.shutdown()
   system.awaitTermination(5000.millis)
 
-  private def out(s : => Any) = println(s) //scalastyle:ignore regex
+  def out(s : => Any) : Unit = println(s) //scalastyle:ignore regex
 
 }
